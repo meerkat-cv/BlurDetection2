@@ -10,8 +10,7 @@ import logging
 import cv2
 import numpy
 
-from blur_detection import estimate_blur
-from blur_detection import fix_image_size
+import blur_detection
 
 
 def find_images(input_dir):
@@ -48,16 +47,16 @@ if __name__ == '__main__':
         input_image = cv2.imread(input_path)
 
         if args.fix_size:
-            input_image = fix_image_size(input_image)
+            input_image = blur_detection.fix_image_size(input_image)
 
-        blur_map, score, blurry = estimate_blur(input_image)
+        blur_map, score, blurry = blur_detection.estimate_blur(input_image)
 
         logging.info("input_path: {0}, score: {1}, blurry: {2}".format(input_path, score, blurry))
         results.append({"input_path": input_path, "score": score, "blurry": blurry})
 
         if args.display:
             cv2.imshow("input", input_image)
-            cv2.imshow("result", pretty_blur_map(blur_map))
+            cv2.imshow("result", blur_detection.pretty_blur_map(blur_map))
             cv2.waitKey(0)
 
     logging.info("writing results to {0}".format(args.save_path))

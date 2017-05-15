@@ -8,9 +8,7 @@ import logging
 import cv2
 import numpy
 
-from blur_detection import estimate_blur
-from blur_detection import fix_image_size
-from blur_detection import pretty_blur_map
+import blur_detection
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='run blur detection on a single image')
@@ -34,13 +32,13 @@ if __name__ == '__main__':
     input_image = cv2.imread(args.input_image)
 
     if args.fix_size:
-        input_image = fix_image_size(input_image)
+        input_image = blur_detection.fix_image_size(input_image)
 
-    blur_map, score, blurry = estimate_blur(input_image)
+    blur_map, score, blurry = blur_detection.estimate_blur(input_image)
 
     logging.info("score: {0}, blurry: {1}".format(score, blurry))
 
     if args.display:
         cv2.imshow("input", input_image)
-        cv2.imshow("result", pretty_blur_map(blur_map))
+        cv2.imshow("result", blur_detection.pretty_blur_map(blur_map))
         cv2.waitKey(0)
