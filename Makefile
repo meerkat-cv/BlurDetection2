@@ -1,8 +1,5 @@
-install_deps:
-	pip install -U -r requirements.txt
-
 install:
-	pip install ./
+	pip install -U -r requirements.txt
 
 test:
 	py.test

@@ -1,29 +1,10 @@
 language: python
-
-dist: trusty
-sudo: required
-
-
-matrix:
-  include:
-    - python: "2.7"
-    - python: "3.4"
-    - python: "3.5"
-    - python: "3.5-dev"
-    - python: "3.6"
-    - python: "3.6-dev"
-    - python: "nightly"
-  allow_failures:
-    - python: "3.5-dev"
-    - python: "3.6"
-    - python: "3.6-dev"
-    - python: "nightly"
-
-before_script:
-  - make install_deps
-
+python:
+  - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+install:
+  - make install
 script:
-  - uname -a
-  - pytest --version
-  - python -V
-  - make test
+    - make test
