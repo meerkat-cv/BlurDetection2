@@ -10,9 +10,11 @@ import logging
 import cv2
 import numpy
 
-from blur_detection import estimate_blur
-from blur_detection import fix_image_size
-
+from blur_detection.detection import estimate_blur
+from blur_detection.detection import fix_image_size
+from blur_detection.detection import pretty_blur_map
+from matplotlib import pyplot as mp
+import matplotlib
 
 def find_images(input_dir):
     extensions = [".jpg", ".png", ".jpeg"]
@@ -42,33 +44,70 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
 
     results = []
+    image_score = []
 
-    for input_path in find_images(args.input_dir):
-        try:
-            logging.info("processing {0}".format(input_path))
-            input_image = cv2.imread(input_path)
+    input_dirs = ['/home/gfickel/meerkat/clients/axon/docs/Non-blurry_Customer_photos', \
+                  '/home/gfickel/meerkat/clients/axon/docs/Blurred_Customer_photo/']
 
-            if args.fix_size:
-                input_image = fix_image_size(input_image)
+    # input_dirs = ['/home/gfickel/meerkat/clients/axon/docs/Non-blurry ID document images/', \
+    #               '/home/gfickel/meerkat/clients/axon/docs/Blurred ID document images/']
 
-            blur_map, score, blurry = estimate_blur(input_image)
+    mp.xlim(0,1)
+    mp.ylim(0,600)
 
-            logging.info("input_path: {0}, score: {1}, blurry: {2}".format(input_path, score, blurry))
-            results.append({"input_path": input_path, "score": score, "blurry": blurry})
 
-            if args.display:
-                cv2.imshow("input", input_image)
-                cv2.imshow("result", pretty_blur_map(blur_map))
-                cv2.waitKey(0)
-        except Exception as e:
-            print(e)
-            pass
+    for curr_dir in input_dirs:
+        scores = []
+        img_score = []
+        for input_path in find_images(curr_dir):
+            try:
+                input_image = cv2.imread(input_path)
 
-    logging.info("writing results to {0}".format(args.save_path))
+                if args.fix_size:
+                    input_image = fix_image_size(input_image)
 
-    assert os.path.splitext(args.save_path)[1] == ".json"
+                blur_map, score, blurry = estimate_blur(input_image)
+                scores.append(score)
+                img_score.append((input_path, score))
+            except Exception as e:
+                print(e)
+                pass
 
-    with open(args.save_path, 'w') as outfile:
-        data = {"input_dir": args.input_dir, "threshold": args.threshold, "results": results}
-        json.dump(data, outfile, sort_keys=True, indent=4)
-        outfile.write("\n")
+        results.append(scores)
+        image_score.append(img_score)
+        print('Final: ', str(numpy.mean(scores)))
+
+
+    mp.xlim(0,1)
+    mp.ylim(0,600)
+
+    for dist in results[0]:
+        x, y = numpy.random.rand(), dist
+        pts1 = mp.scatter(x, y, color=[0.5,0.1,0.1], s=60)
+
+    for dist in results[1]:
+        x, y = numpy.random.rand(), dist
+        pts2 = mp.scatter(x, y, color=[0.1,0.1,0.5], s=100)
+
+
+    num_pts = len(results[0])+len(results[1])
+    acc = []
+    for thresh in range(200):
+        correct = 0
+        for dist in results[0]:
+            if dist > thresh: correct += 1
+        for dist in results[1]:
+            if dist < thresh: correct += 1
+        acc.append(correct/num_pts)
+
+    best_idx = numpy.argmax(acc)
+    print('acc: ', acc[best_idx])
+
+    for im_score in image_score[0]:
+        if im_score[1] < best_idx: os.system('cp {} bad_non_blur/.'.format(im_score[0]))
+    for im_score in image_score[1]:
+        if im_score[1] > best_idx: os.system('cp {} bad_blur/.'.format(im_score[0]))
+
+    mp.legend([pts2, pts1], ['Blur', 'Non Blur'], loc='upper left')
+    mp.plot([0,1], [best_idx,best_idx], color=[0.1,0.5,0.1])
+    mp.show()
